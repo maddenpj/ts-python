@@ -1,4 +1,4 @@
-# Solving the Traveling salesmen problem with a GA implemented in python
+## Solving the Traveling salesmen problem with a GA implemented in python
 
 Doesn't work yet.
 
