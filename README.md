@@ -1,6 +1,5 @@
 ## Solving the Traveling salesmen problem with a GA implemented in python
 
-Doesn't work yet.
+Works reasonably well.
 
-Don't clone this... just leave it alone
-
+Still working on improving it
