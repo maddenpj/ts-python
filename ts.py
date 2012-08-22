@@ -6,19 +6,19 @@ import sys
 
 HEIGHT = 10000
 WIDTH  = 10000
-NUM_CITIES = 100
+NUM_CITIES = 300
 
 InitPopulation = 1000
 MatePcnt       = 0.5
 MutationRate   = 0.1
-NumIterations  = 1000
+NumIterations  = 3000
 
 class Point:
 	def __init__(self,x,y):
 		self.x = x
 		self.y = y
 	def __repr__(self):
-		return '('+str(self.x)+','+str(self.y)+')';
+		return 'Point,'+str(self.x)+','+str(self.y)
 	
 	def distanceTo(self,other):
 		dx = abs(self.x - other.x)
@@ -26,6 +26,8 @@ class Point:
 		
 		return math.sqrt( dx*dx + dy*dy )
 
+# Route for traveling to cities
+# This is what gets "evolved" 
 class Route:
 	def __init__(self):
 		self.path = []
@@ -34,30 +36,19 @@ class Route:
 	def __repr__(self):
 		return str(self.fitness_)
 
-	def printPoints(self):
-		for p in self.path:
-			print 'Point,'+str(p.x)+','+str(p.y)
-	
-	def fancyRepr(self):
-		sx = 'X | '
-		sy = 'Y | '
-		for p in self.path:
-			sx += str(p.x) + ' '
-			sy += str(p.y) + ' '
-		return sy + '\n' + sx + '\n'
-
-	def addPoint(self,x,y): 
-		self.path.append(Point(x,y))
-
+	# Generates a random route given a list of cities
+	# Used to spawn the initial population
 	def generateRoute(self,cities):
 		 self.path = list(cities)
 		 shuffle(self.path)
-	
+
+	# Fitness function
+	# Inverse of distance
 	def fitness(self):
-		# Fitness is reciprocal of distance
 		self.fitness_ = 1.0/self.distance()
 		return self.fitness_
 	
+	# Computes the total distance of the path
 	def distance(self):
 		total = 0
 		for i in xrange(0,len(self.path)):
@@ -65,6 +56,9 @@ class Route:
 			total += self.path[i].distanceTo(self.path[nx])
 		return total
 	
+	# Mates the route with another
+	# Grabs a random section from the first parent
+    # then fills in the missing points in order from the second parent
 	def sexyTime(self,mate):
 		child = Route()
 		midme = int(len(self.path)/2)
@@ -77,6 +71,7 @@ class Route:
 
 		return child
 	
+	# Mutates the route by simple swap of points
 	def mutate(self):
 		idx1 = randrange(0, len(self.path))
 		idx2 = idx1
@@ -85,41 +80,34 @@ class Route:
 		
 		self.path[idx1], self.path[idx2] = self.path[idx2], self.path[idx1]
 
+	# Random Util
+	def printPoints(self):
+		for p in self.path:
+			print p
+	
+	def fancyRepr(self):
+		sx = 'X | '
+		sy = 'Y | '
+		for p in self.path:
+			sx += str(p.x) + ' '
+			sy += str(p.y) + ' '
+		return sy + '\n' + sx + '\n'
 
+	def addPoint(self,x,y): 
+		self.path.append(Point(x,y))
+
+# Randomly generates a grid of cities
 class Grid:
-	# Basic map structure
 	def __init__(self):
 		self.height = HEIGHT
 		self.width = WIDTH
-		self.g = []
 		self.cities = []
-	# Generates a random map
-    # self.g is only really used for display 
+	
 	def Init(self, count):
-		self.g = [[False for i in range(self.width)] for j in range(self.height)]
 		for i in xrange(count):
 			x = randrange(0,self.width)
 			y = randrange(0,self.height)
 			self.cities.append(Point(x,y))
-			self.g[y][x] = True
-	
-	def buildFromCities(self):
-		self.g = [[False for i in range(self.width)] for j in range(self.height)]
-		for c in self.cities:
-			self.g[c.y][c.x] = True
-	
-
-	def __repr__(self):
-		s = ''
-		for row in self.g:
-			s += ' '
-			for col in row:
-				if(col):
-					s += ' X '
-				else:
-					s += ' - '
-			s += '\n'
-		return s
 
 
 
@@ -128,10 +116,12 @@ g = Grid()
 g.Init(NUM_CITIES)
 population = []
 
-
+# Even Population
 if InitPopulation%2 != 0:
 	InitPopulation += 1
 
+
+print 'Parameters ', HEIGHT, WIDTH, NUM_CITIES, InitPopulation, MutationRate, NumIterations
 print 'Generating Initial Population: Stand By'
 for i in xrange(0,InitPopulation):
 	r = Route()
@@ -142,37 +132,28 @@ iteration = 0
 print 'Starting life.'
 for i in xrange(0,NumIterations):
 	
-	# Determine fitness
+	newPopulation = []
+	
+	# Compute fitness 
 	for indv in population:
 		indv.fitness()
 	
-	maxFit = max(population, key = lambda v: v.fitness_)
+	# Most Fit Individual 
+	maxFit = max(population, key = lambda v: v.fitness_) 
 	
-	print ('Iteration: ' + str(iteration ))
-	iteration += 1
-	print ('The most fit individual in this population is: ' + str(max(population, key = lambda v: v.fitness_)))
-	print ('Datar,'+str(maxFit)+','+str((1.0/maxFit.fitness_)))
-	print
-	sys.stdout.flush()
-	
-	
-	newPopulation = []
-	#for idx in xrange(0,int(len(A)*MatePcnt)):
-	
-
 	# Split population into two halves
 	A = population[:int(len(population)/2)]
 	B = population[int(len(population)/2):]
 	
-	# Sort by fitness
+	# Sort them by fitness
 	A = sorted(A, key= lambda v: v.fitness_, reverse=True)
 	B = sorted(B, key= lambda v: v.fitness_, reverse=True)
 	
-	# Mate
+	# Mate the top MatePcnt% 
 	for idx in xrange(0,int(len(A)*MatePcnt)):
 		newPopulation.append(A[idx].sexyTime(B[idx]))	
 	
-	# Mutate
+	# Mutate a few
 	for indv in population:
 		cpy = Route()
 		cpy.path = list(indv.path)
@@ -180,12 +161,18 @@ for i in xrange(0,NumIterations):
 			cpy.mutate()
 			newPopulation.append(cpy)
 	
-	# Add rest of population
+	# Randomly add rest of population to keep the size of the universe the same
 	shuffle(population) 
 	newPopulation += population[0:len(population)-len(newPopulation)]
 	population = list(newPopulation)
 
-
+	# Some logging
+	print ('Iteration: ' + str(iteration ))
+	print ('The most fit individual in this population is: ' + str(maxFit.fitness_))
+	print ('Data,'+str(maxFit)+','+str((1.0/maxFit.fitness_)))
+	print
+	sys.stdout.flush() # Used to watch progress 
+	iteration += 1
 
 
 max(population, key = lambda v: v.fitness_).printPoints() 
