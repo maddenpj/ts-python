@@ -10,7 +10,7 @@ NUM_CITIES = 300
 
 InitPopulation = 1000
 MatePcnt       = 0.5
-MutationRate   = 0.1
+MutationRate   = 0.01
 NumIterations  = 3000
 
 class Point:
@@ -121,7 +121,7 @@ if InitPopulation%2 != 0:
 	InitPopulation += 1
 
 
-print 'Parameters ', HEIGHT, WIDTH, NUM_CITIES, InitPopulation, MutationRate, NumIterations
+print 'Parameters ', HEIGHT, WIDTH, NUM_CITIES, InitPopulation, MatePcnt, MutationRate, NumIterations
 print 'Generating Initial Population: Stand By'
 for i in xrange(0,InitPopulation):
 	r = Route()
